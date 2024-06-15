@@ -1,0 +1,158 @@
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Book {
+public:
+    string title;
+    string author;
+    string genre;
+    bool available;
+
+    Book(string t, string a, string g) : title(t), author(a), genre(g), available(true) {}
+};
+
+class LibraryInventory {
+private:
+    unordered_map<string, Book*> books_by_title;
+    unordered_map<string, vector<Book*>> books_by_author;
+    unordered_map<string, vector<Book*>> books_by_genre;
+
+public:
+    ~LibraryInventory() {
+        for (auto& pair : books_by_title) {
+            delete pair.second;
+        }
+    }
+
+    void add_book(Book* book) {
+        books_by_title[book->title] = book;
+        books_by_author[book->author].push_back(book);
+        books_by_genre[book->genre].push_back(book);
+    }
+
+    Book* find_book_by_title(string title) {
+        if (books_by_title.find(title) != books_by_title.end())
+            return books_by_title[title];
+        return nullptr;
+    }
+
+    vector<Book*> find_books_by_author(string author) {
+        if (books_by_author.find(author) != books_by_author.end())
+            return books_by_author[author];
+        return {};
+    }
+
+    vector<Book*> find_books_by_genre(string genre) {
+        if (books_by_genre.find(genre) != books_by_genre.end())
+            return books_by_genre[genre];
+        return {};
+    }
+
+    bool checkout_book(string title) {
+        Book* book = find_book_by_title(title);
+        if (book && book->available) {
+            book->available = false;
+            return true;
+        }
+        return false;
+    }
+
+    void return_book(string title) {
+        Book* book = find_book_by_title(title);
+        if (book)
+            book->available = true;
+    }
+};
+
+void display_books(const vector<Book*>& books) {
+    if (books.empty()) {
+        cout << "No books found." << endl;
+    } else {find
+        for (Book* book : books) {
+            cout << book->title << " by " << book->author << " (" << book->genre << ")" << endl;
+        }
+    }
+}
+
+int main() {
+    LibraryInventory inventory;
+
+   
+    inventory.add_book(new Book("The Great Gatsby", "F. Scott Fitzgerald", "Classic"));
+    inventory.add_book(new Book("To Kill a Mockingbird", "Harper Lee", "Fiction"));
+    inventory.add_book(new Book("1984", "George Orwell", "Dystopian"));
+
+    string command, title, author, genre;
+
+    while (true) {
+        cout << "Enter command (add, find, checkout, return, exit): ";
+        cin >> command;
+
+        if (command == "add") {
+            cout << "Enter title: ";
+            cin.ignore();
+            getline(cin, title);
+            cout << "Enter author: ";
+            getline(cin, author);
+            cout << "Enter genre: ";
+            getline(cin, genre);
+            inventory.add_book(new Book(title, author, genre));
+        } else if (command == "find") {
+            cout << "Search by (title, author, genre): ";
+            string search_type;
+            cin >> search_type;
+
+            if (search_type == "title") {
+                cout << "Enter title: ";
+                cin.ignore();
+                getline(cin, title);
+                Book* book = inventory.find_book_by_title(title);
+                if (book) {
+                    cout << book->title << " by " << book->author << " (" << book->genre << ")" << endl;
+                    cout << "Availability: " << (book->available ? "Available" : "Not available") << endl;
+                } else {
+                    cout << "Book not found." << endl;
+                }
+            } else if (search_type == "author") {
+                cout << "Enter author: ";
+                cin.ignore();
+                getline(cin, author);
+                vector<Book*> books = inventory.find_books_by_author(author);
+                display_books(books);
+            } else if (search_type == "genre") {
+                cout << "Enter genre: ";
+                cin.ignore();
+                getline(cin, genre);
+                vector<Book*> books = inventory.find_books_by_genre(genre);
+                display_books(books);
+            } else {
+                cout << "Invalid search type." << endl;
+            }
+        } else if (command == "checkout") {
+            cout << "Enter title: ";
+            cin.ignore();
+            getline(cin, title);
+            if (inventory.checkout_book(title)) {
+                cout << "Book checked out successfully." << endl;
+            } else {
+                cout << "Book not available." << endl;
+            }
+        } else if (command == "return") {
+            cout << "Enter title: ";
+            cin.ignore();
+            getline(cin, title);
+            inventory.return_book(title);
+            cout << "Book returned successfully." << endl;
+        } else if (command == "exit") {
+            break;
+        } else {
+            cout << "Invalid command." << endl;
+        }
+    }
+
+    return 0;
+}
